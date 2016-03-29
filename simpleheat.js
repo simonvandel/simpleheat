@@ -1,6 +1,6 @@
 'use strict';
 
-//var Rainbow = require('rainbowvis.js');
+var Rainbow = require('rainbowvis.js');
 var myRainbow = new Rainbow();
 
 
