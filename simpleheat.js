@@ -1,5 +1,9 @@
 'use strict';
 
+//var Rainbow = require('rainbowvis.js');
+var myRainbow = new Rainbow();
+
+
 if (typeof module !== 'undefined') module.exports = simpleheat;
 
 function simpleheat(canvas) {
@@ -19,13 +23,13 @@ simpleheat.prototype = {
 
     defaultRadius: 25,
 
-    defaultGradient: {
-        0.4: 'blue',
-        0.6: 'cyan',
-        0.7: 'lime',
-        0.8: 'yellow',
-        1.0: 'red'
-    },
+    defaultGradient: [
+        'blue',
+        'cyan',
+        'lime',
+        'yellow',
+        'red'
+    ],
 
     data: function (data) {
         this._data = data;
@@ -75,47 +79,51 @@ simpleheat.prototype = {
     },
 
     gradient: function (grad) {
-        // create a 256x1 gradient that we'll use to turn a grayscale heatmap into a colored one
-        var canvas = this._createCanvas(),
-            ctx = canvas.getContext('2d'),
-            gradient = ctx.createLinearGradient(0, 0, 0, 256);
-
-        canvas.width = 1;
-        canvas.height = 256;
-
-        for (var i in grad) {
-            gradient.addColorStop(+i, grad[i]);
-        }
-
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, 1, 256);
-
-        this._grad = ctx.getImageData(0, 0, 1, 256).data;
-
+        this._grad = grad;
         return this;
     },
 
     draw: function (minOpacity) {
+
         if (!this._circle) this.radius(this.defaultRadius);
-        if (!this._grad) this.gradient(this.defaultGradient);
+        //if (!this._grad) this.gradient(this.defaultGradient);
+
+        var grad = this._grad === undefined ? this.defaultGradient : this._grad;
+        //console.log(this._grad)
+        //
+        var gradient = Object.keys(grad).map(function (value,_) {
+          return grad[value];
+        });
+
+        //console.log(gradient)
 
         var ctx = this._ctx;
 
         ctx.clearRect(0, 0, this._width, this._height);
 
-        // draw a grayscale heatmap by putting a blurred circle at each data point
         for (var i = 0, len = this._data.length, p; i < len; i++) {
             p = this._data[i];
-            ctx.globalAlpha = Math.max(p[2] / this._max, minOpacity === undefined ? 0.05 : minOpacity);
-            ctx.drawImage(this._circle, p[0] - this._r, p[1] - this._r);
-        }
-
-        // colorize the heatmap, using opacity value of each pixel to get the right color from our gradient
-        var colored = ctx.getImageData(0, 0, this._width, this._height);
-        this._colorize(colored.data, this._grad);
-        ctx.putImageData(colored, 0, 0);
+            ctx.beginPath();
+            ctx.arc(p[0] - this._r, p[1] - this._r, this._r, 0, 2 * Math.PI, false);
+            //console.log(p)
+            ctx.fillStyle = this._calcColor(p[2], gradient, 0);
+            //console.log(ctx.fillStyle)
+            ctx.fill();
+            //ctx.globalAlpha = Math.max(p[2] / this._max, minOpacity === undefined ? 0.05 : minOpacity);
+            //ctx.drawImage(this._circle, p[0] - this._r, p[1] - this._r);
+        };
 
         return this;
+    },
+
+    _calcColor: function (value, gradient, opacity) {
+      //console.log("calcColor:" + value)
+      myRainbow.setSpectrum.apply(this, gradient);
+      //myRainbow.setSpectrum('red', 'yellow', 'white');
+      myRainbow.setNumberRange(0, 8);
+      var h = myRainbow.colourAt(value);
+      //console.log(h)
+      return "#" + h
     },
 
     _colorize: function (pixels, gradient) {
