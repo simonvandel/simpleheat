@@ -17,7 +17,6 @@ function simpleheat(canvas) {
     this._height = canvas.height;
 
     this._max = 1;
-    this._data = [];
 }
 
 simpleheat.prototype = {
@@ -32,47 +31,12 @@ simpleheat.prototype = {
         'red'
     ],
 
-    data: function (data) {
-        this._data = data;
-        return this;
-    },
-
     max: function (max) {
         this._max = max;
         return this;
     },
 
-    add: function (point) {
-        this._data.push(point);
-        return this;
-    },
 
-    clear: function () {
-        this._data = [];
-        return this;
-    },
-
-    radius: function (r, blur) {
-        blur = blur === undefined ? 15 : blur;
-
-        // create a grayscale blurred circle image that we'll use for drawing points
-        var circle = this._circle = this._createCanvas(),
-            ctx = circle.getContext('2d'),
-            r2 = this._r = r + blur;
-
-        circle.width = circle.height = r2 * 2;
-
-        ctx.shadowOffsetX = ctx.shadowOffsetY = r2 * 2;
-        ctx.shadowBlur = blur;
-        ctx.shadowColor = 'black';
-
-        ctx.beginPath();
-        ctx.arc(-r2, -r2, r, 0, Math.PI * 2, true);
-        ctx.closePath();
-        ctx.fill();
-
-        return this;
-    },
 
     resize: function () {
         this._width = this._canvas.width;
@@ -84,61 +48,37 @@ simpleheat.prototype = {
         return this;
     },
 
-    draw: function (minOpacity) {
-
-        if (!this._circle) this.radius(this.defaultRadius);
-        //if (!this._grad) this.gradient(this.defaultGradient);
-
+    draw: function (data, radius) {
+        var calcColor = this._calcColor;
         var grad = this._grad === undefined ? this.defaultGradient : this._grad;
-        //console.log(this._grad)
-        //
-        var gradient = Object.keys(grad).map(function (value,_) {
-          return grad[value];
-        });
 
-        //console.log(gradient)
+        var gradient = Object.keys(grad).map(function (value) {
+            return grad[value];
+        });
 
         var ctx = this._ctx;
 
         ctx.clearRect(0, 0, this._width, this._height);
-
-        for (var i = 0, len = this._data.length, p; i < len; i++) {
-            p = this._data[i];
+        data.forEach(function (dataPoint) {
             ctx.beginPath();
-            ctx.arc(p[0] - this._r, p[1] - this._r, this._r, 0, 2 * Math.PI, false);
-            //console.log(p)
-            ctx.fillStyle = this._calcColor(p[2], gradient, p[3]);
-            //console.log(ctx.fillStyle)
+            ctx.arc(dataPoint[0], dataPoint[1], radius, 0, 2 * Math.PI, false);
+            ctx.fillStyle = calcColor(dataPoint[2], gradient, dataPoint[3], 8); // TODO: maxValue skal ikke være 8
             ctx.fill();
-            //ctx.globalAlpha = Math.max(p[2] / this._max, minOpacity === undefined ? 0.05 : minOpacity);
-            //ctx.drawImage(this._circle, p[0] - this._r, p[1] - this._r);
-        };
+        });
 
         return this;
     },
 
-    _calcColor: function (value, gradient, opacity) {
+    _calcColor: function (value, gradient, opacity, maxValue) {
       //console.log("calcColor:" + value)
-      myRainbow.setSpectrum.apply(this, gradient);
+        myRainbow.setSpectrum.apply(this, gradient);
       //myRainbow.setSpectrum('red', 'yellow', 'white');
-      myRainbow.setNumberRange(0, 8);
-      var h = myRainbow.colourAt(value);
-      return Color("#" + h).alpha(opacity).rgbaString()
+        myRainbow.setNumberRange(0, maxValue);
+        var h = myRainbow.colourAt(value);
+        return Color('#' + h).alpha(opacity).rgbaString();
     },
 
-    _colorize: function (pixels, gradient) {
-        for (var i = 0, len = pixels.length, j; i < len; i += 4) {
-            j = pixels[i + 3] * 4; // get gradient color from opacity value
-
-            if (j) {
-                pixels[i] = gradient[j];
-                pixels[i + 1] = gradient[j + 1];
-                pixels[i + 2] = gradient[j + 2];
-            }
-        }
-    },
-
-    _createCanvas:function() {
+    _createCanvas: function () {
         if (typeof document !== 'undefined') {
             return document.createElement('canvas');
         } else {
