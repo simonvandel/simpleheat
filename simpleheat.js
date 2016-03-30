@@ -2,6 +2,7 @@
 
 var Rainbow = require('rainbowvis.js');
 var myRainbow = new Rainbow();
+var Color = require('color');
 
 
 if (typeof module !== 'undefined') module.exports = simpleheat;
@@ -106,7 +107,7 @@ simpleheat.prototype = {
             ctx.beginPath();
             ctx.arc(p[0] - this._r, p[1] - this._r, this._r, 0, 2 * Math.PI, false);
             //console.log(p)
-            ctx.fillStyle = this._calcColor(p[2], gradient, 0);
+            ctx.fillStyle = this._calcColor(p[2], gradient, p[3]);
             //console.log(ctx.fillStyle)
             ctx.fill();
             //ctx.globalAlpha = Math.max(p[2] / this._max, minOpacity === undefined ? 0.05 : minOpacity);
@@ -122,8 +123,7 @@ simpleheat.prototype = {
       //myRainbow.setSpectrum('red', 'yellow', 'white');
       myRainbow.setNumberRange(0, 8);
       var h = myRainbow.colourAt(value);
-      //console.log(h)
-      return "#" + h
+      return Color("#" + h).alpha(opacity).rgbaString()
     },
 
     _colorize: function (pixels, gradient) {

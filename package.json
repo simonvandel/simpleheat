@@ -29,6 +29,7 @@
   },
   "license": "BSD-2-Clause",
   "dependencies": {
+    "color": "^0.11.1",
     "rainbowvis.js": "^1.0.1"
   }
 }
